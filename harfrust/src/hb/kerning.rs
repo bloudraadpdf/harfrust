@@ -22,6 +22,10 @@ use super::ot_shape_plan::hb_ot_shape_plan_t;
 use super::{hb_font_t, hb_mask_t};
 use crate::U32Set;
 
+pub(crate) fn pair_kerning_disabled(boundaries: &[u32], first: u32, second: u32) -> bool {
+    first != second && boundaries.contains(&first.max(second))
+}
+
 pub(crate) fn get_class(machine: &aat::StateTable, glyph_id: GlyphId, cache: &ClassCache) -> u8 {
     if let Some(klass) = cache.get(glyph_id.to_u32()) {
         return klass as u8;
@@ -38,8 +42,10 @@ pub fn hb_ot_layout_kern(
     face: &hb_font_t,
     scale: Scale,
     buffer: &mut hb_buffer_t,
+    disabled_pair_kerning: &[u32],
 ) -> Option<()> {
     let mut c = AatApplyContext::new(plan, face, scale, buffer);
+    c.disabled_pair_kerning = disabled_pair_kerning;
 
     c.setup_buffer_glyph_set();
 
@@ -132,6 +138,7 @@ fn machine_kern<F>(
     buffer: &mut hb_buffer_t,
     kern_mask: hb_mask_t,
     cross_stream: bool,
+    disabled_pair_kerning: &[u32],
     get_kerning: F,
 ) where
     F: Fn(u32, u32) -> i32,
@@ -163,6 +170,10 @@ fn machine_kern<F>(
         let j = iter.index();
 
         let info = &iter.buffer.info;
+        if pair_kerning_disabled(disabled_pair_kerning, info[i].cluster, info[j].cluster) {
+            i = j;
+            continue;
+        }
         let kern = get_kerning(info[i].glyph_id, info[j].glyph_id);
         let kern = if use_x_scale {
             scale.scale_x(kern)
@@ -216,6 +227,7 @@ fn apply_simple_kerning<T: SimpleKerning>(
         c.buffer,
         c.plan.kern_mask,
         is_cross_stream,
+        c.disabled_pair_kerning,
         |left, right| {
             if !first_set.contains(left) || !second_set.contains(right) {
                 0

@@ -10,5 +10,12 @@ pub fn substitute(
     font_funcs: &mut FontFuncsDispatch,
     buffer: &mut hb_buffer_t,
 ) {
-    apply_layout_table(plan, face, font_funcs, buffer, face.ot_tables.gsub.as_ref());
+    apply_layout_table(
+        plan,
+        face,
+        font_funcs,
+        buffer,
+        face.ot_tables.gsub.as_ref(),
+        &[],
+    );
 }

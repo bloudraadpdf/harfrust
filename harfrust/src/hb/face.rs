@@ -265,6 +265,7 @@ pub struct ShapeOptions<'a> {
     scale: Option<(i32, i32)>,
     point_size: Option<f32>,
     features: &'a [Feature],
+    disabled_pair_kerning: &'a [u32],
     font_funcs: Option<&'a mut (dyn FontFuncs + 'a)>,
 }
 
@@ -327,6 +328,20 @@ impl<'a> ShapeOptions<'a> {
     /// Sets the features to apply during shaping.
     pub fn features(mut self, features: &'a [Feature]) -> Self {
         self.features = features;
+        self
+    }
+
+    /// Disables optional pair kerning before the given source clusters.
+    ///
+    /// Cluster IDs must increase in logical source order. Each ID identifies
+    /// the following cluster at a boundary that survives substitution. Pairs
+    /// within one cluster and IDs removed by substitution are unaffected.
+    ///
+    /// Applies to GPOS pair positioning owned only by `kern` or `vkrn`, and
+    /// simple legacy `kern` and `kerx` pairs. Required positioning, shared
+    /// non-kerning features, and stateful kerning remain unchanged.
+    pub fn disable_pair_kerning_at(mut self, clusters: &'a [u32]) -> Self {
+        self.disabled_pair_kerning = clusters;
         self
     }
 
@@ -610,6 +625,7 @@ impl<'a> crate::Shaper<'a> {
                 buffer,
                 target_direction,
                 features: options.features,
+                disabled_pair_kerning: options.disabled_pair_kerning,
                 point_size: options.point_size,
                 font_funcs: &mut font_funcs,
             }

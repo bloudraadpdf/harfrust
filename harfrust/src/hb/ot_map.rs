@@ -59,6 +59,7 @@ pub struct lookup_map_t {
     pub auto_zwj: bool,
     pub random: bool,
     pub mask: hb_mask_t,
+    pub non_kerning_mask: hb_mask_t,
     pub per_syllable: bool,
 }
 
@@ -90,6 +91,14 @@ impl hb_ot_map_t {
     #[inline]
     pub fn get_global_mask(&self) -> hb_mask_t {
         self.global_mask
+    }
+
+    pub fn has_common_feature(&self, first: hb_mask_t, second: hb_mask_t, mask: hb_mask_t) -> bool {
+        first & second & mask != 0
+            || self.features.iter().any(|feature| {
+                let feature_mask = feature.mask & mask;
+                first & feature_mask != 0 && second & feature_mask != 0
+            })
     }
 
     #[inline]
@@ -513,6 +522,7 @@ impl<'a> hb_ot_map_builder_t<'a> {
                             feature_index,
                             variation_index,
                             GLOBAL_BIT_MASK,
+                            GLOBAL_BIT_MASK,
                             true,
                             true,
                             false,
@@ -530,6 +540,13 @@ impl<'a> hb_ot_map_builder_t<'a> {
                                 feature_index,
                                 variation_index,
                                 feature.mask,
+                                if feature.tag == hb_tag_t::new(b"kern")
+                                    || feature.tag == hb_tag_t::new(b"vkrn")
+                                {
+                                    0
+                                } else {
+                                    feature.mask
+                                },
                                 feature.auto_zwnj,
                                 feature.auto_zwj,
                                 feature.random,
@@ -553,6 +570,7 @@ impl<'a> hb_ot_map_builder_t<'a> {
                             lookups[j] = lookups[i];
                         } else {
                             lookups[j].mask |= lookups[i].mask;
+                            lookups[j].non_kerning_mask |= lookups[i].non_kerning_mask;
                             lookups[j].auto_zwnj &= lookups[i].auto_zwnj;
                             lookups[j].auto_zwj &= lookups[i].auto_zwj;
                         }
@@ -586,6 +604,7 @@ impl<'a> hb_ot_map_builder_t<'a> {
         feature_index: u16,
         variation_index: Option<u32>,
         mask: hb_mask_t,
+        non_kerning_mask: hb_mask_t,
         auto_zwnj: bool,
         auto_zwj: bool,
         random: bool,
@@ -610,6 +629,7 @@ impl<'a> hb_ot_map_builder_t<'a> {
                     auto_zwj,
                     random,
                     mask,
+                    non_kerning_mask,
                     per_syllable,
                 });
             }

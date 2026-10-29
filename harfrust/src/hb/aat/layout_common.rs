@@ -44,6 +44,7 @@ pub struct AatApplyContext<'a> {
     pub buffer: &'a mut hb_buffer_t,
     pub has_glyph_classes: bool,
     pub range_flags: Option<&'a [RangeFlags]>,
+    pub disabled_pair_kerning: &'a [u32],
     pub subtable_flags: hb_mask_t,
     pub(crate) buffer_is_reversed: bool,
     // Caches
@@ -69,6 +70,7 @@ impl<'a> AatApplyContext<'a> {
             buffer,
             has_glyph_classes: face.ot_tables.has_glyph_classes(),
             range_flags: None,
+            disabled_pair_kerning: &[],
             subtable_flags: 0,
             buffer_is_reversed: false,
             using_buffer_glyph_set: false,

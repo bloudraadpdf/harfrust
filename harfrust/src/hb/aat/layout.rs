@@ -549,8 +549,10 @@ pub fn position(
     face: &hb_font_t,
     scale: Scale,
     buffer: &mut hb_buffer_t,
+    disabled_pair_kerning: &[u32],
 ) {
     let mut c = AatApplyContext::new(plan, face, scale, buffer);
+    c.disabled_pair_kerning = disabled_pair_kerning;
     layout_kerx_table::apply(&mut c);
 }
 

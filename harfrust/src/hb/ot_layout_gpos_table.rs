@@ -10,8 +10,16 @@ pub fn position(
     face: &hb_font_t,
     font_funcs: &mut FontFuncsDispatch,
     buffer: &mut hb_buffer_t,
+    disabled_pair_kerning: &[u32],
 ) {
-    apply_layout_table(plan, face, font_funcs, buffer, face.ot_tables.gpos.as_ref());
+    apply_layout_table(
+        plan,
+        face,
+        font_funcs,
+        buffer,
+        face.ot_tables.gpos.as_ref(),
+        disabled_pair_kerning,
+    );
 }
 
 pub mod attach_type {

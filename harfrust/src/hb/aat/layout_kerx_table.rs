@@ -246,6 +246,14 @@ fn apply_simple_kerning<T: SimpleKerning>(c: &mut AatApplyContext, subtable: &Su
         let j = iter.index();
 
         let info = &iter.buffer.info;
+        if crate::hb::kerning::pair_kerning_disabled(
+            c.disabled_pair_kerning,
+            info[i].cluster,
+            info[j].cluster,
+        ) {
+            i = j;
+            continue;
+        }
         let a = info[i].as_glyph();
         let b = info[j].as_glyph();
         let kern = if !first_set.contains(a.to_u32()) || !second_set.contains(b.to_u32()) {

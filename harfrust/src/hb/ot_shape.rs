@@ -303,6 +303,7 @@ pub(crate) struct OtShapeContext<'a, 'u> {
     pub face: &'a hb_font_t<'a>,
     pub buffer: &'a mut hb_buffer_t,
     pub features: &'a [Feature],
+    pub disabled_pair_kerning: &'a [u32],
     // Transient stuff
     pub target_direction: Direction,
     pub point_size: Option<f32>,
@@ -520,12 +521,30 @@ impl OtShapeContext<'_, '_> {
         let face = self.face;
         let buffer = &mut *self.buffer;
         if plan.apply_gpos {
-            ot_layout_gpos_table::position(plan, face, self.font_funcs, buffer);
+            ot_layout_gpos_table::position(
+                plan,
+                face,
+                self.font_funcs,
+                buffer,
+                self.disabled_pair_kerning,
+            );
         } else if plan.apply_kerx {
-            aat::layout::position(plan, face, *self.font_funcs.scale(), buffer);
+            aat::layout::position(
+                plan,
+                face,
+                *self.font_funcs.scale(),
+                buffer,
+                self.disabled_pair_kerning,
+            );
         }
         if plan.apply_kern {
-            kerning::hb_ot_layout_kern(plan, face, *self.font_funcs.scale(), buffer);
+            kerning::hb_ot_layout_kern(
+                plan,
+                face,
+                *self.font_funcs.scale(),
+                buffer,
+                self.disabled_pair_kerning,
+            );
         } else if plan.apply_fallback_kern {
             ot_shape_fallback::_hb_ot_shape_fallback_kern(plan, face, buffer);
         }

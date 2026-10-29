@@ -857,6 +857,9 @@ pub mod OT {
         pub scale: Scale,
         pub buffer: &'a mut hb_buffer_t,
         lookup_mask: hb_mask_t,
+        pub non_kerning_mask: hb_mask_t,
+        pub feature_map: Option<&'a crate::hb::ot_map::hb_ot_map_t>,
+        pub disabled_pair_kerning: &'a [u32],
         pub per_syllable: bool,
         pub lookup_index: u16,
         pub lookup_props: u32,
@@ -887,6 +890,9 @@ pub mod OT {
                 scale,
                 buffer,
                 lookup_mask: 1,
+                non_kerning_mask: 0,
+                feature_map: None,
+                disabled_pair_kerning: &[],
                 per_syllable: false,
                 lookup_index: u16::MAX,
                 lookup_props: u32::MAX,
@@ -925,6 +931,18 @@ pub mod OT {
             self.lookup_mask = mask;
             self.last_base = -1;
             self.last_base_until = 0;
+        }
+
+        pub fn pair_kerning_disabled(&self, second: usize) -> bool {
+            let first = &self.buffer.info[self.buffer.idx];
+            let second = &self.buffer.info[second];
+            crate::hb::kerning::pair_kerning_disabled(
+                self.disabled_pair_kerning,
+                first.cluster,
+                second.cluster,
+            ) && !self.feature_map.is_some_and(|map| {
+                map.has_common_feature(first.mask, second.mask, self.non_kerning_mask)
+            })
         }
 
         pub fn lookup_mask(&self) -> hb_mask_t {

@@ -73,6 +73,9 @@ impl Apply for PairPosFormat1<'_> {
             };
 
         let mut buf_idx = iter.buf_idx;
+        if ctx.pair_kerning_disabled(second_glyph_index) {
+            return None;
+        }
         let set_offset = self
             .pair_set_offsets()
             .get(first_glyph_coverage_index as usize)?
@@ -231,6 +234,9 @@ impl Apply for PairPosFormat2<'_> {
             ),
         };
         let mut buf_idx = iter.buf_idx;
+        if ctx.pair_kerning_disabled(second_glyph_index) {
+            return None;
+        }
         let format1 = self.value_format1();
         let format1_len = format1.record_byte_len();
         let format2 = self.value_format2();

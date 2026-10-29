@@ -149,8 +149,11 @@ pub fn apply_layout_table<T: LayoutTable>(
     font_funcs: &mut FontFuncsDispatch,
     buffer: &mut hb_buffer_t,
     table: Option<&T>,
+    disabled_pair_kerning: &[u32],
 ) {
     let mut ctx = OT::hb_ot_apply_context_t::new(T::INDEX, face, *font_funcs.scale(), buffer);
+    ctx.disabled_pair_kerning = disabled_pair_kerning;
+    ctx.feature_map = Some(&plan.ot_map);
 
     for (stage_index, stage) in plan.ot_map.stages(T::INDEX).iter().enumerate() {
         if let Some(table) = table {
@@ -162,6 +165,7 @@ pub fn apply_layout_table<T: LayoutTable>(
                 if lookup.digest().may_intersect(&ctx.buffer.digest) {
                     ctx.lookup_index = lookup_map.index;
                     ctx.set_lookup_mask(lookup_map.mask);
+                    ctx.non_kerning_mask = lookup_map.non_kerning_mask;
                     ctx.auto_zwj = lookup_map.auto_zwj;
                     ctx.auto_zwnj = lookup_map.auto_zwnj;
 
